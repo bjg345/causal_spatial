@@ -1,0 +1,26 @@
+#heterogeneous linear, random
+
+
+library(boot)
+
+source('sc_functions.R')
+source('params.R')
+args <- commandArgs(trailingOnly = T)
+id <- as.numeric(args[1])
+method <- args[2]
+
+out.file = file.path(method, paste0('sim2_', id, '.rds'))
+if(file.exists(out.file)) quit()
+
+set.seed(id)
+s <- matrix(ncol = 2, runif(2*n, -1, 1))
+C <- sin(2*pi*s[,1]*s[,2]) + s[,1] + s[,2]
+X <- C^3 + rnorm(n, sd = 5*exp(C/2))
+Y <- 3*C + (1+rnorm(n))*X + rnorm(n)
+
+dat <- cbind(X, Y, s)
+
+res <- boot(dat, sc_cont, method = method, shift = 1, R = nboot, parallel = 'multicore', ncpus = ncores)
+
+saveRDS(list(est = res$t0, se = sd(res$t), boot = res), out.file)
+
